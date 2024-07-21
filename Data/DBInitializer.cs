@@ -20,18 +20,16 @@ public class DBInitializer
 
         var count = await DB.CountAsync<Item>();
 
+        using var scope = app.Services.CreateScope();
+
+        var httpClient = scope.ServiceProvider.GetRequiredService<AuctionSvcHttpClient>();
+
+        var items = await httpClient.GetItemsForSearchDb();
+
+        Console.WriteLine($"Items from AuctionService: {items.Count}");
+
         if (count == 0)
         {
-            Console.WriteLine("Seeding database...");
-            var itemData = await File.ReadAllTextAsync("Data/auctions.json");
-
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
-
-            var items = JsonSerializer.Deserialize<List<Item>>(itemData, options);
-
             await DB.SaveAsync(items);
         }
     }
