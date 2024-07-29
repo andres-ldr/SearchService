@@ -18,6 +18,10 @@ public class AuctionCreatedConsumer : IConsumer<AuctionCreated>
         Console.WriteLine("--> Consuming AuctionCreated" + context.Message.Id);
 
         var item = _mapper.Map<Item>(context.Message);
+
+        // Simulate a fault
+        if (item.Model == "Foo") throw new ArgumentException("Cannot sell cars with model Foo");
+
         await item.SaveAsync();
     }
 }
