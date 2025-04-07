@@ -1,5 +1,6 @@
 
 using MassTransit;
+using Polly;
 using SearchService;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,15 +40,12 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-try
+// Retry to run the DB on error
+app.Lifetime.ApplicationStarted.Register(async () =>
 {
-    await DBInitializer.InitDB(app);
-}
-catch (Exception e)
-{
-
-    Console.WriteLine(e);
-}
-
+    await Policy.Handle<TimeoutException>()
+        .WaitAndRetryAsync(5, retryAttempt => TimeSpan.FromSeconds(10))
+        .ExecuteAndCaptureAsync(async () => await DBInitializer.InitDB(app));
+});
 
 app.Run();
